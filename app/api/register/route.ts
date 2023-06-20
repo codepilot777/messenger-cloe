@@ -18,7 +18,7 @@ export async function POST(
       return new NextResponse('Missing Info', { status: 400 })
     }
   
-    const hashedPassword = await bcrypt.hash(passowrd, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
   
     const user = await prisma.user.create({
       data: {
@@ -27,7 +27,7 @@ export async function POST(
         hashedPassword
       }
     });
-    return NextResponse.json
+    return NextResponse.json(user)
   } catch (error:any) {
     console.log(error, "REGISTRATION_ERROR")
     return new NextResponse('Internal error', { status: 500 })

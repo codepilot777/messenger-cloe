@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { BsGithub, BsGoogle } from 'react-icons/bs';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { signIn } from 'next-auth/react';
 
 import Input from "./inputs/Input";
 import Button from "./Button";
@@ -42,10 +44,31 @@ const AuthForm = () => {
     if (variant === "REGISTER") {
       // axios register
       axios.post('/api/register', data)
+      .catch(() => {
+        toast.error('Something went wrong')
+      }).finally(() =>{
+        setIsLoading(false);
+      });
     }
 
     if (variant === "LOGIN") {
       // NextAuth SignIn
+      signIn('credentials', {
+        ...data,
+        redirect: false
+      })
+      .then((callback) => {
+        if (callback?.error) {
+          toast.error('Invalid credentials')
+        }
+        
+        if(callback?.ok && !callback?.error) {
+          toast.success('Logged In')
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      })
     }
   }
 
@@ -53,6 +76,19 @@ const AuthForm = () => {
     setIsLoading(true);
 
     // NextAuth Social Sign In
+    signIn(action, { redirect: false })
+    .then((callback) => {
+      if (callback?.error) {
+        toast.error('Invald credentials')
+      }
+
+      if (callback?.ok || !callback?.error){
+        toast.success('Logged In')
+      }
+    })
+    .finally(() => {
+      setIsLoading(false);
+    })
   }
   return (
     <div
@@ -91,7 +127,11 @@ const AuthForm = () => {
             disabled={isLoading}
           />
           <div>
-            <Button>{
+            <Button
+              disabled={isLoading}
+              fullWidth
+              type="submit"
+            >{
               variant === "LOGIN" ? "SIGN IN" : "REGISTER"
             }</Button>
           </div>
@@ -99,9 +139,9 @@ const AuthForm = () => {
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-3" />
+              <div className="w-full border-t border-gray-300" />
             </div>
-            <div className="relative flex justify-center text-center">
+            <div className="relative flex justify-center text-sm">
               <span className="bg-white px-2 text-gray-500">
                 Or continue with
               </span>
@@ -119,12 +159,14 @@ const AuthForm = () => {
           </div>
         </div>
         <div className="flex gap-2 justify-center text-sm mt-6 px-2 text-gray-500">
-          {variant === "LOGIN" ? "New to Messenger?" : "Already have an account?"}
-        </div>
-        <div onClick={toggleVariant}
-          className="underline cursor-pointer"
-        >
-          {variant === "LOGIN" ? "Create an account" : "Log In"}
+          <div>
+            {variant === "LOGIN" ? "New to Messenger?" : "Already have an account?"}
+          </div>
+          <div onClick={toggleVariant}
+            className="underline cursor-pointer"
+          >
+            {variant === "LOGIN" ? "Create an account" : "Log In"}
+          </div>
         </div>
       </div>
     </div>
