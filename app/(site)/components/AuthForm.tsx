@@ -1,21 +1,30 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { BsGithub, BsGoogle } from 'react-icons/bs';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from "next/router";
 
-import Input from "./inputs/Input";
-import Button from "./Button";
+import Input from "../../components/inputs/Input";
+import Button from "../../components/Button";
 import AuthSocialButton from './AuthSocialButton';
 
 type Variant = "LOGIN" | "REGISTER"
 
 const AuthForm = () => {
+  const session = useSession();
+  const router = useRouter();
   const [ variant, setVariant ] = useState<Variant>('LOGIN');
   const [ isLoading, setIsLoading ] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (session?.status === 'authenticated') {
+      router.push('/users')
+    }
+  },[session?.status, router])
 
   const toggleVariant =  useCallback(() => {
     if (variant === "LOGIN") {
@@ -44,6 +53,7 @@ const AuthForm = () => {
     if (variant === "REGISTER") {
       // axios register
       axios.post('/api/register', data)
+      .then(() => signIn('credentials', data))
       .catch(() => {
         toast.error('Something went wrong')
       }).finally(() =>{
@@ -84,6 +94,7 @@ const AuthForm = () => {
 
       if (callback?.ok || !callback?.error){
         toast.success('Logged In')
+        router.push('/users')
       }
     })
     .finally(() => {
@@ -142,12 +153,12 @@ const AuthForm = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">
+              <span className="px-2 text-gray-500 bg-white">
                 Or continue with
               </span>
             </div>
           </div>
-          <div className='mt-6 flex gap-3'>
+          <div className='flex gap-3 mt-6'>
             <AuthSocialButton 
               icon={BsGithub}
               onClick={() => socialAction('github')}
@@ -158,7 +169,7 @@ const AuthForm = () => {
             />
           </div>
         </div>
-        <div className="flex gap-2 justify-center text-sm mt-6 px-2 text-gray-500">
+        <div className="flex justify-center gap-2 px-2 mt-6 text-sm text-gray-500">
           <div>
             {variant === "LOGIN" ? "New to Messenger?" : "Already have an account?"}
           </div>
